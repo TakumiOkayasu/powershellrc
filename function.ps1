@@ -1,0 +1,1 @@
+function rmrf() {Remove-Item -Recurse -Force $args}

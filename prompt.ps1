@@ -11,7 +11,7 @@ function prompt {
   $marker = if ($isRoot) {"#"}   else {"$"}
 
   Write-Host "$env:USERNAME " -ForegroundColor $color -NoNewline
-  Write-Host "$pwd " -ForegroundColor Magenta -NoNewline
+  Write-Host "$pwd " -ForegroundColor DarkCyan -NoNewline
 
   if ($branch -ne "") {
     Write-Host(" (") -NoNewline -ForegroundColor Yellow

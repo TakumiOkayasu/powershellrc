@@ -1,7 +1,4 @@
 function prompt {
-  Install-Module -Name Terminal-Icons -Repository PSGallery
-  Import-Module -Name Terminal-Icons
-
   $branch = ""
 
   if (git branch) {

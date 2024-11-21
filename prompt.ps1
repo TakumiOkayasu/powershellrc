@@ -1,3 +1,6 @@
+Import-Module -Name Terminal-Icons
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
 function prompt {
   $branch = ""
 

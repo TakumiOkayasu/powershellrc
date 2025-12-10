@@ -12,6 +12,7 @@ jobs:
 
     permissions:
       contents: write
+      issues: write
 
     steps:
       - name: Checkout repository
@@ -30,6 +31,15 @@ jobs:
         run: |
           git diff --quiet List.txt || echo "changed=true" >> $GITHUB_OUTPUT
 
+      - name: Get changes details
+        if: steps.check_changes.outputs.changed == 'true'
+        id: get_changes
+        shell: bash
+        run: |
+          echo "変更の詳細を取得..."
+          git diff List.txt > changes.diff
+          cat changes.diff
+
       - name: Commit and push if changed
         if: steps.check_changes.outputs.changed == 'true'
         shell: bash
@@ -43,3 +53,50 @@ jobs:
 
           Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
           git push
+
+      - name: Create notification issue
+        if: steps.check_changes.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 変更日時を取得
+          CURRENT_DATE=$(date +'%Y-%m-%d')
+
+          # 変更内容を取得
+          DIFF_OUTPUT=$(git diff HEAD~1 List.txt)
+
+          # 追加されたパッケージ
+          ADDED=$(echo "$DIFF_OUTPUT" | grep "^+" | grep -v "^+++" | sed 's/^+//' || echo "なし")
+
+          # 削除されたパッケージ
+          REMOVED=$(echo "$DIFF_OUTPUT" | grep "^-" | grep -v "^---" | sed 's/^-//' || echo "なし")
+
+          # Issue本文を作成
+          ISSUE_BODY="## GroupPolicy パッケージリストが更新されました
+
+### 更新日時
+${CURRENT_DATE}
+
+### 追加されたパッケージ
+\`\`\`
+${ADDED}
+\`\`\`
+
+### 削除されたパッケージ
+\`\`\`
+${REMOVED}
+\`\`\`
+
+### 変更の詳細
+コミット: ${{ github.sha }}
+ワークフロー実行: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+---
+🤖 このIssueは自動生成されました"
+
+          # Issueを作成
+          gh issue create \
+            --title "GroupPolicy パッケージリスト更新通知 (${CURRENT_DATE})" \
+            --body "$ISSUE_BODY" \
+            --label "automated,update"

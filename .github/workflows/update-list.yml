@@ -1,0 +1,45 @@
+name: Update GroupPolicy Package List
+
+on:
+  schedule:
+    # 毎週月曜日の午前9時（JST）に実行（UTC 0:00）
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # 手動実行も可能にする
+
+jobs:
+  update-list:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update GroupPolicy package list
+        shell: cmd
+        run: |
+          echo Updating GroupPolicy package list...
+          dir /b %SystemRoot%\servicing\Packages\Microsoft-Windows-GroupPolicy-ClientExtensions-Package~3*.mum >List.txt
+          dir /b %SystemRoot%\servicing\Packages\Microsoft-Windows-GroupPolicy-ClientTools-Package~3*.mum >>List.txt
+
+      - name: Check for changes
+        id: check_changes
+        shell: bash
+        run: |
+          git diff --quiet List.txt || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add List.txt
+          git commit -m "chore: update GroupPolicy package list
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+          git push
